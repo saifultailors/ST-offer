@@ -45,7 +45,7 @@ export default function Home() {
   }
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -53,11 +53,16 @@ export default function Home() {
     setNotice("");
     setCoupon(null);
 
+    const cleanName = name.trim();
+    const cleanPhone = phone.trim();
+
     if (
-      !name.trim() ||
-      !/^01[3-9]\d{8}$/.test(phone.trim())
+      cleanName.length < 2 ||
+      !/^01[3-9]\d{8}$/.test(cleanPhone)
     ) {
-      setNotice("সঠিক নাম ও বাংলাদেশের ১১ সংখ্যার মোবাইল নম্বর লিখুন।");
+      setNotice(
+        "সঠিক নাম ও বাংলাদেশের ১১ সংখ্যার মোবাইল নম্বর লিখুন।"
+      );
       return;
     }
 
@@ -70,8 +75,8 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: name.trim(),
-          phone: phone.trim(),
+          name: cleanName,
+          phone: cleanPhone,
         }),
       });
 
@@ -79,6 +84,11 @@ export default function Home() {
 
       if (!res.ok) {
         setNotice(data.error || "অফার নেওয়া যায়নি।");
+        return;
+      }
+
+      if (!data.coupon) {
+        setNotice("কুপনের তথ্য পাওয়া যায়নি। আবার চেষ্টা করুন।");
         return;
       }
 
@@ -95,183 +105,36 @@ export default function Home() {
     }
   }
 
-  // মরুনি-সোনালি PNG কুপন তৈরি
-      async function downloadCoupon() {
-  if (!coupon) {
-    alert("আগে একটি কুপন তৈরি করুন।");
-    return;
-  }
-
-  try {
-    const canvas = document.createElement("canvas");
-    canvas.width = 900;
-    canvas.height = 1150;
-
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) {
-      throw new Error("Canvas তৈরি করা যায়নি");
+  // কুপনকে PNG ছবি হিসেবে তৈরি ও ডাউনলোড
+  async function downloadCoupon() {
+    if (!coupon) {
+      alert("আগে একটি কুপন তৈরি করুন।");
+      return;
     }
 
-    // ব্যাকগ্রাউন্ড
-    ctx.fillStyle = "#f8f1e8";
-    ctx.fillRect(0, 0, 900, 1150);
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 900;
+      canvas.height = 1150;
 
-    // মরুনি ব্যাকগ্রাউন্ড
-    ctx.fillStyle = "#5b1027";
-    ctx.beginPath();
-    ctx.roundRect(30, 30, 840, 1090, 35);
-    ctx.fill();
+      const ctx = canvas.getContext("2d");
 
-    // সোনালি বর্ডার
-    ctx.strokeStyle = "#e3c27c";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.roundRect(53, 53, 794, 1044, 25);
-    ctx.stroke();
+      if (!ctx) {
+        throw new Error("Canvas তৈরি করা যায়নি");
+      }
 
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+      // ব্যাকগ্রাউন্ড
+      ctx.fillStyle = "#f8f1e8";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // দোকানের নাম
-    ctx.fillStyle = "#f0d79e";
-    ctx.font = "bold 43px sans-serif";
-    ctx.fillText("SAIFUL TAILORS", 450, 125);
+      // মরুনি প্যানেল
+      ctx.fillStyle = "#5b1027";
+      ctx.beginPath();
+      ctx.roundRect(30, 30, 840, 1090, 35);
+      ctx.fill();
 
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 44px sans-serif";
-    ctx.fillText("সাইফুল টেইলার্স", 450, 195);
-
-    // বিভাজক
-    ctx.strokeStyle = "#e3c27c";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(170, 245);
-    ctx.lineTo(730, 245);
-    ctx.stroke();
-
-    // অভিনন্দন
-    ctx.fillStyle = "#f0d79e";
-    ctx.font = "bold 55px sans-serif";
-    ctx.fillText("অভিনন্দন!", 450, 320);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "32px sans-serif";
-    ctx.fillText("আপনার ডিসকাউন্ট", 450, 390);
-
-    // ডিসকাউন্ট বাক্স
-    ctx.fillStyle = "#fffaf0";
-    ctx.beginPath();
-    ctx.roundRect(155, 435, 590, 170, 25);
-    ctx.fill();
-
-    ctx.strokeStyle = "#e3c27c";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.roundRect(165, 445, 570, 150, 20);
-    ctx.stroke();
-
-    ctx.fillStyle = "#70172f";
-    ctx.font = "bold 88px sans-serif";
-    ctx.fillText(`৳${coupon.discount}`, 450, 520);
-
-    // গ্রাহকের নাম
-    ctx.fillStyle = "#f0d79e";
-    ctx.font = "30px sans-serif";
-    ctx.fillText("গ্রাহকের নাম", 450, 670);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 39px sans-serif";
-    ctx.fillText(coupon.name, 450, 730);
-
-    // কুপন নম্বর
-    ctx.fillStyle = "#f0d79e";
-    ctx.font = "29px sans-serif";
-    ctx.fillText("কুপন নম্বর", 450, 800);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 36px sans-serif";
-    ctx.fillText(coupon.couponCode, 450, 855);
-
-    // শর্তাবলি
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "24px sans-serif";
-    ctx.fillText(
-      "৬০০ টাকা বা তার বেশি অর্ডারে প্রযোজ্য",
-      450,
-      935
-    );
-
-    ctx.font = "21px sans-serif";
-    ctx.fillText(
-      "অ্যাডমিন অনুমোদন ও মেয়াদ যাচাই সাপেক্ষে",
-      450,
-      980
-    );
-
-    // ফুটার
-    ctx.fillStyle = "#f0d79e";
-    ctx.font = "bold 24px sans-serif";
-    ctx.fillText("আপনার স্টাইল, আমাদের দক্ষতা", 450, 1040);
-
-    // আসল PNG তৈরি
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(
-        (result) => {
-          if (result && result.type === "image/png") {
-            resolve(result);
-          } else {
-            reject(new Error("PNG তৈরি করা যায়নি"));
-          }
-        },
-        "image/png"
-      );
-    });
-
-    // PNG ফাইল ডাউনলোড
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = `${coupon.couponCode}.png`;
-
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 10000);
-
-  } catch (error) {
-    console.error("PNG download error:", error);
-    alert("কুপন PNG হিসেবে ডাউনলোড করা যায়নি। আবার চেষ্টা করুন।");
-  }
-}
-
-  return (
-    <main className="shell">
-      <header className="hero">
-        <div className="brandmark">ST</div>
-
-        <p className="eyebrow">SAIFUL TAILORS</p>
-
-        <h1>সাইফুল টেইলার্স</h1>
-
-        <p className="sub">
-          আপনার পোশাক তৈরিতে বিশেষ মাসিক অফার
-        </p>
-
-        <div className="prize">
-          ৳৪০ – ৳২০০
-          <span>পর্যন্ত ডিসকাউন্ট</span>
-        </div>
-
-        <p className="condition">
-          ৬০০ টাকা বা তার বেশি মূল্যের পোশাক তৈরিতে কুপন প্রযোজ্য
-        </p>
-      </header>
-
-      {offer?.active ? (
-        <section className="panel">
-          <div className="panel
+      // সোনালি বর্ডার
+      ctx.strokeStyle = "#e3c27c";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.roundRect(53, 53
