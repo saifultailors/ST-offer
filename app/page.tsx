@@ -137,4 +137,21 @@ export default function Home() {
       ctx.strokeStyle = "#e3c27c";
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.roundRect(53, 53, 79, 1044, 20)
+      ctx.roundRect(53, 53, 794, 1044, 20);
+      ctx.stroke();
+
+      // কুপন ডাউনলোড করার জন্য লিংক তৈরি
+      const link = document.createElement("a");
+      link.download = `coupon-${coupon.couponCode}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (error) {
+      console.error("Error downloading coupon:", error);
+    }
+  }
+
+  return (
+    // আপনার JSX কোড এখানে থাকবে
+    <div></div>
+  );
+}
