@@ -2,269 +2,289 @@
 
 import { useEffect, useState } from "react";
 
-type Offer = {
+type Coupon = {
   id: string;
-  name: string;
-  phone: string;
-  discount: number;
-  couponCode: string;
   status: string;
-  campaignId: string;
-  createdAt?: string;
+  discount: number;
+  createdAt?: string | null;
+  campaignId?: string | null;
+  orderAmount?: number | null;
 };
 
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [message, setMessage] = useState("");
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  async function login() {
+  async function loadCoupons() {
     setLoading(true);
     setMessage("");
 
     try {
-      const res = await fetch("/api/admin/login", {
+      const response = await fetch("/api/admin/coupons", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setLoggedIn(false);
+        }
+        throw new Error(data.error || "কুপন লোড করা যায়নি");
+      }
+
+      setCoupons(data.coupons || []);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "সমস্যা হয়েছে"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function login(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
 
-      if (!res.ok) {
-        setMessage("পাসওয়ার্ড সঠিক নয় অথবা লগইন ব্যবস্থা এখনো সেটআপ হয়নি।");
-        return;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "লগইন করা যায়নি");
       }
 
       setLoggedIn(true);
-      sessionStorage.setItem("st_admin_logged_in", "yes");
-      await loadOffers();
-    } catch {
-      setMessage("সার্ভারের সঙ্গে সংযোগ হচ্ছে না।");
+      setPassword("");
+      await loadCoupons();
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "লগইন ব্যর্থ হয়েছে"
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  async function loadOffers() {
-    setLoading(true);
+  async function updateCoupon(id: string, status: string) {
+    setMessage("");
 
     try {
-      const res = await fetch("/api/admin/coupons", {
-        cache: "no-store",
-        headers: {
-          "x-admin-session":
-            sessionStorage.getItem("st_admin_logged_in") || "",
-        },
-      });
-
-      if (!res.ok) {
-        setMessage("কুপনের API এখনো তৈরি বা সংযুক্ত করা হয়নি।");
-        return;
-      }
-
-      const data = await res.json();
-      setOffers(data.coupons || []);
-    } catch {
-      setMessage("কুপনের তালিকা লোড করা যায়নি।");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateStatus(
-    couponCode: string,
-    status: "approved" | "cancelled"
-  ) {
-    const confirmed = window.confirm(
-      status === "approved"
-        ? "এই কুপন অনুমোদন করবেন?"
-        : "এই কুপন বাতিল করবেন?"
-    );
-
-    if (!confirmed) return;
-
-    try {
-      const res = await fetch("/api/admin/coupons", {
+      const response = await fetch("/api/admin/coupons", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          couponCode,
-          status,
-          adminSession:
-            sessionStorage.getItem("st_admin_logged_in") || "",
-        }),
+        body: JSON.stringify({ id, status }),
       });
 
-      if (!res.ok) {
-        setMessage("কুপনের অবস্থা পরিবর্তনের API এখনো প্রস্তুত নয়।");
-        return;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "পরিবর্তন করা যায়নি");
       }
 
-      setMessage("কুপনের অবস্থা পরিবর্তন হয়েছে।");
-      await loadOffers();
-    } catch {
-      setMessage("সার্ভারে সংযোগ করা যায়নি।");
+      setMessage(data.message || "সফল হয়েছে");
+      await loadCoupons();
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "সমস্যা হয়েছে"
+      );
     }
   }
 
   useEffect(() => {
-    if (sessionStorage.getItem("st_admin_logged_in") === "yes") {
-      setLoggedIn(true);
-      void loadOffers();
+    async function checkSession() {
+      try {
+        const response = await fetch("/api/admin/coupons", {
+          cache: "no-store",
+        });
+
+        if (response.ok) {
+          setLoggedIn(true);
+          const data = await response.json();
+          setCoupons(data.coupons || []);
+        }
+      } catch {
+        // লগইন না থাকলে লগইন ফর্ম দেখানো হবে
+      }
     }
+
+    void checkSession();
   }, []);
 
-  function logout() {
-    sessionStorage.removeItem("st_admin_logged_in");
-    setLoggedIn(false);
-    setPassword("");
-    setOffers([]);
+  if (!loggedIn) {
+    return (
+      <main className="min-h-screen bg-gray-100 p-5 flex items-center justify-center">
+        <form
+          onSubmit={login}
+          className="w-full max-w-md rounded-2xl bg-white p-6 shadow"
+        >
+          <h1 className="mb-2 text-2xl font-bold text-center">
+            Saiful Tailors
+          </h1>
+
+          <p className="mb-6 text-center text-gray-600">
+            Admin Login
+          </p>
+
+          <label className="mb-2 block font-medium">
+            অ্যাডমিন পাসওয়ার্ড
+          </label>
+
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            autoComplete="current-password"
+            className="mb-4 w-full rounded-lg border p-3"
+            placeholder="পাসওয়ার্ড লিখুন"
+          />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-black p-3 text-white disabled:opacity-50"
+          >
+            {loading ? "অপেক্ষা করুন..." : "লগইন করুন"}
+          </button>
+
+          {message && (
+            <p role="alert" className="mt-4 text-center text-red-600">
+              {message}
+            </p>
+          )}
+        </form>
+      </main>
+    );
   }
 
   return (
-    <main className="admin-page">
-      <div className="admin-card">
-        <h1>Saiful Tailors</h1>
-        <h2>অ্যাডমিন প্যানেল</h2>
+    <main className="min-h-screen bg-gray-100 p-4 sm:p-8">
+      <div className="mx-auto max-w-5xl">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Saiful Tailors Admin</h1>
+            <p className="text-gray-600">কুপন ব্যবস্থাপনা</p>
+          </div>
 
-        {!loggedIn ? (
-          <div className="login-form">
-            <label htmlFor="admin-password">অ্যাডমিন পাসওয়ার্ড</label>
-            <input
-              id="admin-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="পাসওয়ার্ড লিখুন"
-            />
+          <button
+            onClick={() => {
+              setLoggedIn(false);
+              setCoupons([]);
+            }}
+            className="rounded-lg border bg-white px-4 py-2"
+          >
+            লগইন থেকে বের হন
+          </button>
+        </header>
 
-            <button onClick={login} disabled={loading || !password}>
-              {loading ? "অপেক্ষা করুন..." : "লগইন"}
+        <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl bg-white p-4 shadow-sm">
+            <p className="text-sm text-gray-500">মোট কুপন</p>
+            <p className="text-2xl font-bold">{coupons.length}</p>
+          </div>
+
+          <div className="rounded-xl bg-white p-4 shadow-sm">
+            <p className="text-sm text-gray-500">অনুমোদিত</p>
+            <p className="text-2xl font-bold">
+              {coupons.filter((c) => c.status === "approved").length}
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-white p-4 shadow-sm">
+            <p className="text-sm text-gray-500">বাতিল</p>
+            <p className="text-2xl font-bold">
+              {coupons.filter((c) => c.status === "cancelled").length}
+            </p>
+          </div>
+        </section>
+
+        {message && (
+          <p role="status" className="mb-4 rounded-lg bg-white p-3">
+            {message}
+          </p>
+        )}
+
+        <section className="rounded-xl bg-white p-4 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-bold">কুপনের তালিকা</h2>
+
+            <button
+              onClick={loadCoupons}
+              disabled={loading}
+              className="rounded-lg border px-3 py-2 disabled:opacity-50"
+            >
+              {loading ? "লোড হচ্ছে..." : "রিফ্রেশ"}
             </button>
           </div>
-        ) : (
-          <>
-            <div className="toolbar">
-              <h3>কুপন ব্যবস্থাপনা</h3>
-              <button onClick={loadOffers} disabled={loading}>
-                রিফ্রেশ
-              </button>
-              <button onClick={logout} className="secondary">
-                লগআউট
-              </button>
-            </div>
 
-            {loading && <p>লোড হচ্ছে...</p>}
+          {coupons.length === 0 ? (
+            <p className="py-8 text-center text-gray-500">
+              {loading ? "লোড হচ্ছে..." : "এখনো কোনো কুপন পাওয়া যায়নি।"}
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {coupons.map((coupon) => (
+                <article
+                  key={coupon.id}
+                  className="rounded-lg border p-4"
+                >
+                  <p className="break-all text-xs text-gray-500">
+                    কুপন ID: {coupon.id}
+                  </p>
 
-            {offers.length === 0 && !loading && (
-              <p>এখনো কোনো কুপন পাওয়া যায়নি।</p>
-            )}
+                  <p className="mt-2 font-semibold">
+                    ডিসকাউন্ট: ৳{coupon.discount}
+                  </p>
 
-            {offers.map((coupon) => (
-              <section className="coupon" key={coupon.couponCode}>
-                <h3>{coupon.name}</h3>
-                <p>কুপন: {coupon.couponCode}</p>
-                <p>ডিসকাউন্ট: ৳{coupon.discount}</p>
-                <p>
-                  অবস্থা:{" "}
-                  {coupon.status === "approved"
-                    ? "অনুমোদিত"
-                    : coupon.status === "cancelled"
-                      ? "বাতিল"
-                      : "অপেক্ষমাণ"}
-                </p>
+                  <p className="text-sm">
+                    অর্ডার:{" "}
+                    {coupon.orderAmount == null
+                      ? "উল্লেখ নেই"
+                      : `৳${coupon.orderAmount}`}
+                  </p>
 
-                {coupon.status === "pending" && (
-                  <div className="actions">
+                  <p className="text-sm">
+                    অবস্থা: {coupon.status}
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       onClick={() =>
-                        updateStatus(coupon.couponCode, "approved")
+                        updateCoupon(coupon.id, "approved")
                       }
+                      disabled={coupon.status === "approved"}
+                      className="rounded-lg bg-green-700 px-3 py-2 text-white disabled:opacity-40"
                     >
                       অনুমোদন
                     </button>
+
                     <button
-                      className="secondary"
                       onClick={() =>
-                        updateStatus(coupon.couponCode, "cancelled")
+                        updateCoupon(coupon.id, "cancelled")
                       }
+                      disabled={coupon.status === "cancelled"}
+                      className="rounded-lg bg-red-700 px-3 py-2 text-white disabled:opacity-40"
                     >
                       বাতিল
                     </button>
                   </div>
-                )}
-              </section>
-            ))}
-          </>
-        )}
-
-        {message && <p className="message">{message}</p>}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-
-      <style jsx>{`
-        .admin-page {
-          min-height: 100vh;
-          padding: 24px 14px;
-          background: #f3f5f7;
-          color: #17211c;
-          font-family: Arial, sans-serif;
-        }
-        .admin-card {
-          max-width: 700px;
-          margin: auto;
-          padding: 24px;
-          border-radius: 16px;
-          background: white;
-          box-shadow: 0 4px 20px #00000012;
-        }
-        h1 {
-          margin-bottom: 6px;
-        }
-        input {
-          display: block;
-          box-sizing: border-box;
-          width: 100%;
-          margin: 10px 0 14px;
-          padding: 13px;
-          border: 1px solid #cbd5ce;
-          border-radius: 8px;
-          font-size: 16px;
-        }
-        button {
-          padding: 11px 15px;
-          margin: 4px;
-          border: 0;
-          border-radius: 8px;
-          background: #176b45;
-          color: white;
-          font-size: 15px;
-          cursor: pointer;
-        }
-        button:disabled {
-          opacity: 0.6;
-        }
-        .secondary {
-          background: #59645e;
-        }
-        .toolbar,
-        .actions {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 8px;
-        }
-        .coupon {
-          margin-top: 14px;
-          padding: 15px;
-          border: 1px solid #dce4de;
-          border-radius: 10px;
-        }
-        .message {
-          margin-top: 16px;
-          overflow-wrap: anywhere;
-        }
-      `}</style>
     </main>
   );
 }
