@@ -2,12 +2,13 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyDdV30WmrpAuIsG4K4kDW4g3iNJitDebck",
+  authDomain: "saifultailors-offers.firebaseapp.com",
+  projectId: "saifultailors-offers",
+  storageBucket: "saifultailors-offers.firebasestorage.app",
+  messagingSenderId: "353623142763",
+  appId: "1:353623142763:web:ebd1b6f0ce27d1bcc99c2e",
+  measurementId: "G-8Y69EY5CV8",
 };
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
