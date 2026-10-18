@@ -227,7 +227,7 @@ export default function Home() {
     // ডিসকাউন্ট
     ctx.fillStyle = C.gold;
     ctx.font = `700 170px ${FONT}`;
-    ctx.fillText(`${bn(c.discount)}%`, W / 2, 490);
+    ctx.fillText(`৳${bn(c.discount)}`, W / 2, 490);
 
     ctx.fillStyle = "#ffffff";
     ctx.font = `400 42px ${FONT}`;
@@ -250,20 +250,24 @@ export default function Home() {
     // শর্ত ও মেয়াদ
     ctx.fillStyle = C.gold;
     ctx.font = `400 28px ${FONT}`;
-    let y = 940;
+    let y = 920;
     if (offer?.minOrderAmount) {
       ctx.fillText(`ন্যূনতম অর্ডার ৳${bn(offer.minOrderAmount)}`, W / 2, y);
-      y += 48;
+      y += 42;
     }
     const end = bnDate(offer?.endAt);
     if (end) {
       ctx.fillText(`মেয়াদ: ${end} পর্যন্ত`, W / 2, y);
-      y += 48;
+      y += 42;
     }
 
     ctx.fillStyle = "#ffffff";
     ctx.font = `400 26px ${FONT}`;
-    ctx.fillText("দোকানে এই কোডটি দেখান", W / 2, Math.max(y + 10, 1040));
+    ctx.fillText("দোকানে এই কোডটি দেখান", W / 2, Math.max(y + 10, 1030));
+
+    ctx.fillStyle = "#f1dfc0";
+    ctx.font = `400 22px ${FONT}`;
+    ctx.fillText("অ্যাডমিন অনুমোদন ও মেয়াদ যাচাই সাপেক্ষে", W / 2, 1072);
 
     return new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((b) => {
@@ -437,7 +441,7 @@ export default function Home() {
         {coupon && (
           <section style={s.coupon} aria-label="আপনার কুপন">
             <p style={s.couponShop}>সাইফুল টেইলার্স</p>
-            <p style={s.couponBig}>{bn(coupon.discount)}%</p>
+            <p style={s.couponBig}>৳{bn(coupon.discount)}</p>
             <p style={s.couponSub}>ছাড়</p>
             <p style={s.couponName}>{coupon.name}</p>
             <div style={s.codeBox}>{coupon.couponCode}</div>
@@ -487,7 +491,7 @@ export default function Home() {
                 <li key={`${r.couponCode}-${i}`} style={s.listItem}>
                   <span>{r.name}</span>
                   <span style={s.muted}>
-                    {bn(r.discount)}% · {r.status}
+                    ৳{bn(r.discount)} · {r.status}
                   </span>
                 </li>
               ))}
