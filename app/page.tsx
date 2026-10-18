@@ -96,9 +96,13 @@ export default function Home() {
   }
 
   // মরুনি-সোনালি PNG কুপন তৈরি
-  async function downloadCoupon() {
-    if (!coupon) return;
+      async function downloadCoupon() {
+  if (!coupon) {
+    alert("আগে একটি কুপন তৈরি করুন।");
+    return;
+  }
 
+  try {
     const canvas = document.createElement("canvas");
     canvas.width = 900;
     canvas.height = 1150;
@@ -106,24 +110,15 @@ export default function Home() {
     const ctx = canvas.getContext("2d");
 
     if (!ctx) {
-      alert("কুপন তৈরি করা যায়নি। আবার চেষ্টা করুন।");
-      return;
+      throw new Error("Canvas তৈরি করা যায়নি");
     }
-
-    // বাংলা ফন্ট প্রস্তুত হওয়ার জন্য অপেক্ষা
-    await document.fonts.ready;
 
     // ব্যাকগ্রাউন্ড
     ctx.fillStyle = "#f8f1e8";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, 900, 1150);
 
-    // মরুনি প্যানেল
-    const gradient = ctx.createLinearGradient(0, 0, 900, 1150);
-    gradient.addColorStop(0, "#5b1027");
-    gradient.addColorStop(0.5, "#7d1838");
-    gradient.addColorStop(1, "#400b1c");
-
-    ctx.fillStyle = gradient;
+    // মরুনি ব্যাকগ্রাউন্ড
+    ctx.fillStyle = "#5b1027";
     ctx.beginPath();
     ctx.roundRect(30, 30, 840, 1090, 35);
     ctx.fill();
@@ -147,7 +142,7 @@ export default function Home() {
     ctx.font = "bold 44px sans-serif";
     ctx.fillText("সাইফুল টেইলার্স", 450, 195);
 
-    // সোনালি বিভাজক
+    // বিভাজক
     ctx.strokeStyle = "#e3c27c";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -164,7 +159,7 @@ export default function Home() {
     ctx.font = "32px sans-serif";
     ctx.fillText("আপনার ডিসকাউন্ট", 450, 390);
 
-    // ডিসকাউন্টের বাক্স
+    // ডিসকাউন্ট বাক্স
     ctx.fillStyle = "#fffaf0";
     ctx.beginPath();
     ctx.roundRect(155, 435, 590, 170, 25);
@@ -219,28 +214,40 @@ export default function Home() {
     ctx.font = "bold 24px sans-serif";
     ctx.fillText("আপনার স্টাইল, আমাদের দক্ষতা", 450, 1040);
 
-    // PNG ডাউনলোড
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        alert("PNG ছবি তৈরি করা যায়নি।");
-        return;
-      }
+    // আসল PNG তৈরি
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => {
+          if (result && result.type === "image/png") {
+            resolve(result);
+          } else {
+            reject(new Error("PNG তৈরি করা যায়নি"));
+          }
+        },
+        "image/png"
+      );
+    });
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
+    // PNG ফাইল ডাউনলোড
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
 
-      link.href = url;
-      link.download = `${coupon.couponCode}.png`;
+    link.href = url;
+    link.download = `${coupon.couponCode}.png`;
 
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 2000);
-    }, "image/png");
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 10000);
+
+  } catch (error) {
+    console.error("PNG download error:", error);
+    alert("কুপন PNG হিসেবে ডাউনলোড করা যায়নি। আবার চেষ্টা করুন।");
   }
+}
 
   return (
     <main className="shell">
