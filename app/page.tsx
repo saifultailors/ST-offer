@@ -137,4 +137,4 @@ export default function Home() {
       ctx.strokeStyle = "#e3c27c";
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.roundRect(53, 53
+      ctx.roundRect(53, 53, 79, 1044, 20)
