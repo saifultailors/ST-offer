@@ -41,32 +41,114 @@ export default function Home() {
   }
 
   function downloadCoupon() {
-    if (!coupon) return;
-    const content = `SAIFUL TAILORS\\nসাইফুল টেইলার্স\\nঅভিনন্দন!\\nআপনার ডিসকাউন্ট: ৳${coupon.discount}\\nনাম: ${coupon.name}\\nকুপন: ${coupon.couponCode}\\nশর্ত: ৬০০ টাকা বা তার বেশি মূল্যের পোশাক তৈরি করালে প্রযোজ্য।\\nঅ্যাডমিন অনুমোদন ও মেয়াদ যাচাই সাপেক্ষে।`;
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${coupon.couponCode}.txt`; a.click(); URL.revokeObjectURL(a.href);
-  }
+  if (!coupon) return;
 
-  return <main className="shell">
-    <header className="hero"><div className="brandmark">ST</div><p className="eyebrow">SAIFUL TAILORS</p><h1>সাইফুল টেইলার্স</h1>
-      <p className="sub">আপনার পোশাক তৈরিতে বিশেষ মাসিক অফার</p>
-      <div className="prize">৳৪০ – ৳২০০ <span>পর্যন্ত ডিসকাউন্ট</span></div>
-      <p className="condition">৬০০ টাকা বা তার বেশি মূল্যের পোশাক তৈরিতে কুপন প্রযোজ্য</p>
-    </header>
-    {offer?.active ? <section className="panel"><div className="panelhead"><h2>{offer.title || "বিশেষ অফার"}</h2><span className="badge">অফার চালু</span></div>
-      <p className="muted">অফারের সময়: {offer.startAt || "—"} থেকে {offer.endAt || "—"} · সর্বোচ্চ ৫০ জন</p>
-      <form onSubmit={submit} className="form">
-        <label>আপনার নাম<input value={name} onChange={e=>setName(e.target.value)} maxLength={80} placeholder="পুরো নাম লিখুন" required /></label>
-        <label>মোবাইল নম্বর<input value={phone} onChange={e=>setPhone(e.target.value)} inputMode="numeric" maxLength={11} placeholder="01XXXXXXXXX" required /></label>
-        <label className="check"><input type="checkbox" required /> আমি অফারের শর্তাবলি ও তথ্য ব্যবহারে সম্মত।</label>
-        <button disabled={busy} className="primary">{busy ? "অপেক্ষা করুন…" : "অফার গ্রহণ করুন"}</button>
-      </form>
-    </section> : <section className="notice"><div className="noticeicon">✦</div><h2>নতুন গ্রাহকদের জন্য অফার আসছে!</h2><p>বর্তমানে নতুন অফার চালু নেই। পরবর্তী অফার চালু হলে এই পেজে জানানো হবে। পুরোনো কুপন ও গ্রাহক তালিকা সংরক্ষিত রয়েছে।</p></section>}
-    {notice && <p className="status" role="status">{notice}</p>}
-    {coupon && <section className="coupon"><p className="eyebrow">SAIFUL TAILORS</p><h2>অভিনন্দন!</h2><p>আপনার ডিসকাউন্ট</p><div className="amount">৳{coupon.discount}</div><p>{coupon.name}</p><p>কুপন নম্বর: <b>{coupon.couponCode}</b></p><p className="muted">দোকানে এসে দেখান। কুপন অ্যাডমিন অনুমোদন ও মেয়াদ যাচাই সাপেক্ষে।</p><button className="primary" onClick={downloadCoupon}>কুপন তথ্য ডাউনলোড করুন</button></section>}
-    <section className="panel"><div className="panelhead"><h2>এই মাসের অফার তালিকা</h2><span className="count">{rows.length}/50</span></div>
-      {rows.length ? <div className="tablewrap"><table><thead><tr><th>নাম</th><th>ডিসকাউন্ট</th><th>অবস্থা</th></tr></thead><tbody>{rows.filter(r=>r.status!=="cancelled").map(r=><tr key={r.couponCode}><td>{r.name}</td><td>৳{r.discount}</td><td>{r.status==="approved"?"অনুমোদিত":r.status==="redeemed"?"ব্যবহৃত":"অপেক্ষমাণ"}</td></tr>)}</tbody></table></div> : <p className="muted">এখনো কোনো গ্রাহক এই অফার গ্রহণ করেননি।</p>}
-    </section>
-    <footer>© {new Date().getFullYear()} Saiful Tailors · গ্রাহকের মোবাইল নম্বর প্রকাশ করা হয় না</footer>
-  </main>;
+  const canvas = document.createElement("canvas");
+  canvas.width = 900;
+  canvas.height = 1100;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  // সাদা ব্যাকগ্রাউন্ড
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, 900, 1100);
+
+  // কুপনের বাইরের ডিজাইন
+  const gradient = ctx.createLinearGradient(0, 0, 900, 1100);
+  gradient.addColorStop(0, "#102b25");
+  gradient.addColorStop(1, "#1c493b");
+
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.roundRect(35, 35, 830, 1030, 35);
+  ctx.fill();
+
+  // ভেতরের বর্ডার
+  ctx.strokeStyle = "#d9bd79";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.roundRect(58, 58, 784, 984, 25);
+  ctx.stroke();
+
+  ctx.textAlign = "center";
+
+  // দোকানের নাম
+  ctx.fillStyle = "#e8cf91";
+  ctx.font = "bold 42px sans-serif";
+  ctx.fillText("SAIFUL TAILORS", 450, 145);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 43px sans-serif";
+  ctx.fillText("সাইফুল টেইলার্স", 450, 220);
+
+  // ডিভাইডার
+  ctx.strokeStyle = "#d9bd79";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(170, 265);
+  ctx.lineTo(730, 265);
+  ctx.stroke();
+
+  // অভিনন্দন
+  ctx.fillStyle = "#e8cf91";
+  ctx.font = "bold 52px sans-serif";
+  ctx.fillText("অভিনন্দন!", 450, 355);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "30px sans-serif";
+  ctx.fillText("আপনার ডিসকাউন্ট", 450, 425);
+
+  // ডিসকাউন্টের বক্স
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.roundRect(175, 465, 550, 180, 24);
+  ctx.fill();
+
+  ctx.fillStyle = "#164536";
+  ctx.font = "bold 82px sans-serif";
+  ctx.fillText(`৳${coupon.discount}`, 450, 580);
+
+  // গ্রাহকের নাম
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "30px sans-serif";
+  ctx.fillText("গ্রাহকের নাম", 450, 715);
+
+  ctx.fillStyle = "#e8cf91";
+  ctx.font = "bold 36px sans-serif";
+  ctx.fillText(coupon.name, 450, 770);
+
+  // কুপন নম্বর
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "28px sans-serif";
+  ctx.fillText("কুপন নম্বর", 450, 835);
+
+  ctx.fillStyle = "#e8cf91";
+  ctx.font = "bold 34px sans-serif";
+  ctx.fillText(coupon.couponCode, 450, 885);
+
+  // শর্তাবলি
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "22px sans-serif";
+  ctx.fillText("৬০০ টাকা বা তার বেশি অর্ডারে প্রযোজ্য", 450, 950);
+
+  ctx.font = "19px sans-serif";
+  ctx.fillText("অনুমোদন ও মেয়াদ যাচাই সাপেক্ষে", 450, 990);
+
+  // PNG ছবি ডাউনলোড
+  canvas.toBlob((blob) => {
+    if (!blob) {
+      alert("ছবি তৈরি করা যায়নি। আবার চেষ্টা করুন।");
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = `${coupon.couponCode}.png`;
+    a.click();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, "image/png");
 }
